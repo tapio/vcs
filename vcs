@@ -1,0 +1,47 @@
+#!/bin/bash
+# Copyright (c) 2010 Tapio Vierros
+# License: zlib (http://www.opensource.org/licenses/zlib-license.php)
+
+if [ "$1" = "--help" -o "$1" = "-h" ]; then
+	echo "Usage: `basename $0` [repository_path1] [repository_path2] [...]"
+	echo
+	echo "This script updates the given source code repository from its default location."
+	echo "If no repository is given, current directory is assumed."
+	echo "Updating is done asynchronously (all given repos at the same time)."
+	echo "Currently supported VCS: Bazaar, Git, Mercurial, Subversion"
+	exit 0
+fi
+
+DIRS="$@"
+if [ ! "$DIRS" ]; then
+	DIRS=.
+fi
+
+for i in $DIRS; do
+	echo -n "$i"
+	if [ ! -d "$i" ]; then
+		echo ": No such directory."
+	elif [ -d "$i/.svn" ]; then
+		echo " (svn)"
+		svn up $i &
+	elif [ -d "$i/.git" ]; then
+		echo " (git)"
+		( cd "$i"
+			git pull &
+		)
+	elif [ -d "$i/.hg" ]; then
+		echo " (hg)"
+		( cd "$i"
+			hg pull && hg update &
+		)
+	elif [ -d "$i/.bzr" ]; then
+		echo " (bzr)"
+		( cd "$i"
+			bzr pull &
+		)
+	else
+		echo ": No VCS found."
+	fi
+done
+
+
