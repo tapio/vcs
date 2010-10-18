@@ -1,47 +1,132 @@
 #!/bin/bash
 # Copyright (c) 2010 Tapio Vierros
 # License: zlib (http://www.opensource.org/licenses/zlib-license.php)
+# Description: Simple script to abstract common version control system tasks.
 
-if [ "$1" = "--help" -o "$1" = "-h" ]; then
-	echo "Usage: `basename $0` [repository_path1] [repository_path2] [...]"
+
+if [ "$1" = "--help" -o "$1" = "-h" -o "$1" = "" ]; then
+	echo "Usage: `basename $0` command [repository_path1] [repository_path2] [...]"
 	echo
-	echo "This script updates the given source code repository from its default location."
+	echo "Commands:"
+	echo "up | update | pull   - Fetch upstream changes"
+	echo "log                  - Print log messages to pager"
+	echo "diff                 - Show diff of current changes"
+	#echo "show                 - Show diff of HEAD commit"
+	echo
 	echo "If no repository is given, current directory is assumed."
 	echo "Updating is done asynchronously (all given repos at the same time)."
-	echo "Currently supported VCS: Bazaar, Git, Mercurial, Subversion"
+	echo "Currently supported VCS: Git, Mercurial, Subversion, Bazaar (partial)"
 	exit 0
 fi
 
+# Validate command
+cmd="$1"
+echo "up update pull log show diff" | grep "$cmd" >/dev/null
+if [ $? -ne 0 ]; then
+	echo "Unknown command '$cmd'."
+	echo "Type '`basename $0` --help' for instructions."
+	exit 1
+fi
+shift
+
+# Handle no given directory
 DIRS="$@"
 if [ ! "$DIRS" ]; then
 	DIRS=.
 fi
 
+# Different VCS implementations follow
+# TODO: Could use refactoring, a lot of duplicate code
+
+commands_git()
+{
+	if [ $1 = "up" -o $1 = "update" -o $1 = "pull" ]; then
+		git pull &
+	elif [ $1 = "log" ]; then
+		git log
+	elif [ $1 = "show" ]; then
+		git show
+	elif [ $1 = "diff" ]; then
+		git diff
+	fi
+}
+
+commands_svn()
+{
+	if [ $1 = "up" -o $1 = "update" -o $1 = "pull" ]; then
+		svn up &
+	elif [ $1 = "log" ]; then
+		svn log -l50 | less
+	elif [ $1 = "show" ]; then
+		echo "TODO: 'svn show'"
+	elif [ $1 = "diff" ]; then
+		svn diff | less
+	fi
+}
+
+commands_hg()
+{
+	if [ $1 = "up" -o $1 = "update" -o $1 = "pull" ]; then
+		hg pull && hg update &
+	elif [ $1 = "log" ]; then
+		hg log -l50 | less
+	elif [ $1 = "show" ]; then
+		echo "TODO: 'hg show'"
+	elif [ $1 = "diff" ]; then
+		hg diff | less
+	fi
+}
+
+commands_bzr()
+{
+	if [ $1 = "up" -o $1 = "update" -o $1 = "pull" ]; then
+		bzr pull &
+	elif [ $1 = "log" ]; then
+		bzr log -50 | less
+	elif [ $1 = "show" ]; then
+		echo "TODO: 'bzr show'"
+	elif [ $1 = "diff" ]; then
+		bzr diff | less
+	fi
+}
+
+
+# Loop through directories
 for i in $DIRS; do
-	echo -n "$i"
+	echo -n "$i - $cmd"
+
+	# Check for existance
 	if [ ! -d "$i" ]; then
 		echo ": No such directory."
-	elif [ -d "$i/.svn" ]; then
-		echo " (svn)"
-		svn up $i &
-	elif [ -d "$i/.git" ]; then
-		echo " (git)"
-		( cd "$i"
-			git pull &
-		)
-	elif [ -d "$i/.hg" ]; then
-		echo " (hg)"
-		( cd "$i"
-			hg pull && hg update &
-		)
-	elif [ -d "$i/.bzr" ]; then
-		echo " (bzr)"
-		( cd "$i"
-			bzr pull &
-		)
 	else
-		echo ": No VCS found."
+		( cd "$i"
+			# Figure out VCS
+			if [ -d ".svn" ]; then
+				echo " (svn)"
+				commands_svn $cmd
+			elif [ -d ".git" ]; then
+				echo " (git)"
+				commands_git $cmd
+			elif [ -d ".hg" ]; then
+				echo " (hg)"
+				commands_hg $cmd
+			elif [ -d ".bzr" ]; then
+				echo " (bzr)"
+				commands_bzr $cmd
+			else
+				echo ": No VCS found."
+			fi
+		)
 	fi
 done
 
+# Notify when done
+while [ 1 ]; do
+	ps | grep -E "git|svn|bzr|hg" >/dev/null
+	if [ $? -ne 0 ]; then
+		echo "All done."
+		exit 0
+	fi
+	sleep 1
+done
 
