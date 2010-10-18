@@ -1,0 +1,22 @@
+VCS
+===
+Copyright (c) 2010 Tapio Vierros
+License: zlib (http://www.opensource.org/licenses/zlib-license.php)
+
+
+Description
+-----------
+This is a simple script to abstract common version control system tasks.
+
+It is designed to make e.g. VCS updates easy, so that you don't need
+to remember under which system each project is.
+
+
+Installation
+------------
+Put the 'vcs' file or symlink to it to your PATH.
+
+
+Usage
+-----
+See: vcs --help
