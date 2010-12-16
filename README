@@ -9,8 +9,10 @@ Description
 This is a simple script to abstract common version control system tasks.
 
 It is designed to make e.g. VCS updates easy, so that you don't need
-to remember under which system each project is.
+to remember under which system each project is. As such, it is directed
+towards users who track repositories without doing much development.
 
+If more than one repository is given, the updates are done in parallel.
 
 Installation
 ------------
