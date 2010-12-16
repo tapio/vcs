@@ -101,19 +101,16 @@ for i in $DIRS; do
 	else
 		( cd "$i"
 			# Figure out VCS
-			if [ -d ".svn" ]; then
-				echo " (svn)"
-				commands_svn $cmd
-			elif [ -d ".git" ]; then
-				echo " (git)"
-				commands_git $cmd
-			elif [ -d ".hg" ]; then
-				echo " (hg)"
-				commands_hg $cmd
-			elif [ -d ".bzr" ]; then
-				echo " (bzr)"
-				commands_bzr $cmd
-			else
+			found_repo=""
+			for v in svn git hg bzr; do
+				if [ -d ".$v" ]; then
+					found_repo=1
+					echo " ($v)"
+					commands_$v $cmd
+					break
+				fi
+			done
+			if [ ! "$found_repo" ]; then
 				echo ": No repository found."
 			fi
 		)
