@@ -1,6 +1,6 @@
 VCS
 ===
-Copyright (c) 2010 Tapio Vierros
+Copyright (c) 2010 Tapio Vierros  
 License: zlib (http://www.opensource.org/licenses/zlib-license.php)
 
 
